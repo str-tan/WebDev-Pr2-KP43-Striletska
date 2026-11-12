@@ -1,4 +1,9 @@
+using Microsoft.EntityFrameworkCore;
+using TuneBox.Models;
+using TuneBox.Repositories;
+using TuneBox.Repositories.Interfaces;
 using TuneBox.Services;
+using TuneBox.Profiles;
 
 namespace TuneBox
 {
@@ -8,13 +13,27 @@ namespace TuneBox
         {
             var builder = WebApplication.CreateBuilder(args);
 
-           
-            builder.Services.AddControllers();
-            builder.Services.AddSingleton<DataService>();
+            // Підключення БД
+            builder.Services.AddDbContext<TuneBoxDbContext>(options =>
+            {
+                options.UseSqlite("Data Source=tunebox.db");
+            });
 
+            // AutoMapper
+            builder.Services.AddAutoMapper(cfg =>
+            {
+                cfg.AddProfile<TuneBoxProfile>();
+            });
+                
+            builder.Services.AddControllers();
+
+            // РЕПОЗИТОРІЇ
+            builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
+            builder.Services.AddScoped<ISongRepository, SongRepository>();
+
+            // СЕРВІСИ
             builder.Services.AddScoped<ArtistService>();
             builder.Services.AddScoped<SongService>();
-
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -23,7 +42,6 @@ namespace TuneBox
 
             if (app.Environment.IsDevelopment())
             {
-                
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }

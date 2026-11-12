@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TuneBox.Models;
+using TuneBox.DTOs;
 using TuneBox.Services;
 
 namespace TuneBox.Controllers
@@ -15,39 +15,39 @@ namespace TuneBox.Controllers
             _artistService = artistService;
         }
 
-        // GET
+        // GET: api/artists
         [HttpGet]
-        public ActionResult<IEnumerable<Artist>> GetAllArtists()
+        public ActionResult<IEnumerable<ArtistResponseDto>> GetAllArtists()
         {
             return Ok(_artistService.GetAllArtists());
         }
 
-        // GET by ID
+        // GET: api/artists/{id}
         [HttpGet("{id}")]
-        public ActionResult<Artist> GetArtistById(int id)
+        public ActionResult<ArtistResponseDto> GetArtistById(int id)
         {
             var artist = _artistService.GetArtistById(id);
             if (artist == null)
             {
                 return NotFound($"Artist with ID {id} not found.");
             }
+
             return Ok(artist);
         }
 
-        // POST
+        // POST: api/artists
         [HttpPost]
-        public ActionResult<Artist> CreateArtist([FromBody] Artist newArtist)
+        public ActionResult<ArtistResponseDto> CreateArtist([FromBody] ArtistCreateUpdateDto newArtist)
         {
             var createdArtist = _artistService.CreateArtist(newArtist);
             return CreatedAtAction(nameof(GetArtistById), new { id = createdArtist.Id }, createdArtist);
         }
 
-        // PUT
+        // PUT: api/artists/{id}
         [HttpPut("{id}")]
-        public IActionResult UpdateArtist(int id, [FromBody] Artist updatedArtist)
+        public IActionResult UpdateArtist(int id, [FromBody] ArtistCreateUpdateDto updatedArtist)
         {
             var isUpdated = _artistService.UpdateArtist(id, updatedArtist);
-
             if (!isUpdated)
             {
                 return NotFound($"Artist with ID {id} not found.");
@@ -56,12 +56,11 @@ namespace TuneBox.Controllers
             return NoContent();
         }
 
-        // DELETE by ID
+        // DELETE: api/artists/{id}
         [HttpDelete("{id}")]
         public IActionResult DeleteArtist(int id)
         {
             var isDeleted = _artistService.DeleteArtist(id);
-
             if (!isDeleted)
             {
                 return NotFound($"Artist with ID {id} not found.");
@@ -70,7 +69,7 @@ namespace TuneBox.Controllers
             return NoContent();
         }
 
-        // DELETE all
+        // DELETE: api/artists
         [HttpDelete]
         public IActionResult DeleteAllArtists()
         {
@@ -78,12 +77,11 @@ namespace TuneBox.Controllers
             return NoContent();
         }
 
-        // GET songs by artist ID, one-to-many
+        // GET: api/artists/{id}/songs
         [HttpGet("{id}/songs")]
-        public ActionResult<IEnumerable<Song>> GetSongsByArtist(int id)
+        public ActionResult<IEnumerable<SongResponseDto>> GetSongsByArtist(int id)
         {
             var artistSongs = _artistService.GetSongsByArtist(id);
-
             if (artistSongs == null)
             {
                 return NotFound($"Artist with ID {id} not found.");

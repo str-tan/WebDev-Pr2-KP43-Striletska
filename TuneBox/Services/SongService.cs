@@ -1,81 +1,74 @@
-﻿using TuneBox.Models;
+﻿using AutoMapper;
+using TuneBox.DTOs;
+using TuneBox.Models;
+using TuneBox.Repositories.Interfaces;
 
 namespace TuneBox.Services
 {
     public class SongService
     {
-        private readonly DataService _dataService;
+        private readonly ISongRepository _songRepository;
+        private readonly IArtistRepository _artistRepository;
+        private readonly IMapper _mapper;
 
-        public SongService(DataService dataService)
+        public SongService(ISongRepository songRepository, IArtistRepository artistRepository, IMapper mapper)
         {
-            _dataService = dataService;
+            _songRepository = songRepository;
+            _artistRepository = artistRepository;
+            _mapper = mapper;
         }
 
-        public IEnumerable<Song> GetAllSongs()
+        public IEnumerable<SongResponseDto> GetAllSongs()
         {
-            var data = _dataService.LoadData();
-            return data.Songs;
+            var songs = _songRepository.GetAll();
+            return _mapper.Map<IEnumerable<SongResponseDto>>(songs);
         }
 
-        public Song? GetSongById(int id)
+        public SongResponseDto? GetSongById(int id)
         {
-            var data = _dataService.LoadData();
-            return data.Songs.FirstOrDefault(s => s.Id == id);
+            var song = _songRepository.GetById(id);
+            return song == null ? null : _mapper.Map<SongResponseDto>(song);
         }
 
-        public (Song? Song, string? ErrorMessage) CreateSong(Song newSong)
+        public (SongResponseDto? SongDto, string? ErrorMessage) CreateSong(SongCreateUpdateDto newSongDto)
         {
-            var data = _dataService.LoadData();
-            if (!data.Artists.Any(a => a.Id == newSong.ArtistId))
+            if (!_artistRepository.Exists(newSongDto.ArtistId))
             {
-                return (null, $"Artist with ID {newSong.ArtistId} does not exist.");
+                return (null, $"Artist with ID {newSongDto.ArtistId} does not exist.");
             }
 
-            int newId = data.Songs.Any() ? data.Songs.Max(s => s.Id) + 1 : 1;
-            newSong.Id = newId;
-            data.Songs.Add(newSong);
-            _dataService.SaveData(data);
-            return (newSong, null);
+            var song = _mapper.Map<Song>(newSongDto);
+            _songRepository.Add(song);
+            return (_mapper.Map<SongResponseDto>(song), null);
         }
 
-        public (bool IsSuccess, bool IsNotFound, string? ErrorMessage) UpdateSong(int id, Song updatedSong)
+        public (bool IsSuccess, bool IsNotFound, string? ErrorMessage) UpdateSong(int id, SongCreateUpdateDto updatedSongDto)
         {
-            var data = _dataService.LoadData();
-            var existingSong = data.Songs.FirstOrDefault(s => s.Id == id);
-
+            var existingSong = _songRepository.GetById(id);
             if (existingSong == null) return (false, true, null);
 
-            if (!data.Artists.Any(a => a.Id == updatedSong.ArtistId))
+            if (!_artistRepository.Exists(updatedSongDto.ArtistId))
             {
-                return (false, false, $"Artist with ID {updatedSong.ArtistId} does not exist.");
+                return (false, false, $"Artist with ID {updatedSongDto.ArtistId} does not exist.");
             }
 
-            existingSong.Title = updatedSong.Title;
-            existingSong.Duration = updatedSong.Duration;
-            existingSong.Genre = updatedSong.Genre;
-            existingSong.ArtistId = updatedSong.ArtistId;
-
-            _dataService.SaveData(data);
+            _mapper.Map(updatedSongDto, existingSong);
+            _songRepository.Update(existingSong);
             return (true, false, null);
         }
 
         public bool DeleteSong(int id)
         {
-            var data = _dataService.LoadData();
-            var songToRemove = data.Songs.FirstOrDefault(s => s.Id == id);
-
+            var songToRemove = _songRepository.GetById(id);
             if (songToRemove == null) return false;
 
-            data.Songs.Remove(songToRemove);
-            _dataService.SaveData(data);
+            _songRepository.Delete(songToRemove);
             return true;
         }
 
         public void DeleteAllSongs()
         {
-            var data = _dataService.LoadData();
-            data.Songs.Clear();
-            _dataService.SaveData(data);
+            _songRepository.DeleteAll();
         }
     }
 }

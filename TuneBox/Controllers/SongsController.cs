@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TuneBox.Models;
+using TuneBox.DTOs;
 using TuneBox.Services;
 
 namespace TuneBox.Controllers
@@ -15,26 +15,29 @@ namespace TuneBox.Controllers
             _songService = songService;
         }
 
-        // GET
+        // GET: api/songs
         [HttpGet]
-        public ActionResult<IEnumerable<Song>> GetAllSongs()
+        public ActionResult<IEnumerable<SongResponseDto>> GetAllSongs()
         {
             return Ok(_songService.GetAllSongs());
         }
 
-        // GET by ID
+        // GET: api/songs/{id}
         [HttpGet("{id}")]
-        public ActionResult<Song> GetSongById(int id)
+        public ActionResult<SongResponseDto> GetSongById(int id)
         {
             var song = _songService.GetSongById(id);
+            if (song == null)
+            {
+                return NotFound($"Song with ID {id} not found.");
+            }
 
-            if (song == null) return NotFound($"Song with ID {id} not found.");
             return Ok(song);
         }
 
-        // POST
+        // GET: api/songs/artist/{artistId}
         [HttpPost]
-        public ActionResult<Song> CreateSong([FromBody] Song newSong)
+        public ActionResult<SongResponseDto> CreateSong([FromBody] SongCreateUpdateDto newSong)
         {
             var result = _songService.CreateSong(newSong);
 
@@ -43,16 +46,19 @@ namespace TuneBox.Controllers
                 return BadRequest(result.ErrorMessage);
             }
 
-            return CreatedAtAction(nameof(GetSongById), new { id = result.Song!.Id }, result.Song);
+            return CreatedAtAction(nameof(GetSongById), new { id = result.SongDto!.Id }, result.SongDto);
         }
 
-        // PUT
+        // PUT: api/songs/{id}
         [HttpPut("{id}")]
-        public IActionResult UpdateSong(int id, [FromBody] Song updatedSong)
+        public IActionResult UpdateSong(int id, [FromBody] SongCreateUpdateDto updatedSong)
         {
             var result = _songService.UpdateSong(id, updatedSong);
 
-            if (result.IsNotFound) return NotFound($"Song with ID {id} not found.");
+            if (result.IsNotFound)
+            {
+                return NotFound($"Song with ID {id} not found.");
+            }
 
             if (result.ErrorMessage != null)
             {
@@ -62,18 +68,20 @@ namespace TuneBox.Controllers
             return NoContent();
         }
 
-        // DELETE by ID
+        // DELETE: api/songs/{id}
         [HttpDelete("{id}")]
         public IActionResult DeleteSong(int id)
         {
             var isDeleted = _songService.DeleteSong(id);
-
-            if (!isDeleted) return NotFound($"Song with ID {id} not found.");
+            if (!isDeleted)
+            {
+                return NotFound($"Song with ID {id} not found.");
+            }
 
             return NoContent();
         }
 
-        // DELETE
+        // DELETE: api/songs
         [HttpDelete]
         public IActionResult DeleteAllSongs()
         {

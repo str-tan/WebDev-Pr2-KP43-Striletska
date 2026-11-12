@@ -1,81 +1,72 @@
-﻿using TuneBox.Models;
+﻿using AutoMapper;
+using TuneBox.DTOs;
+using TuneBox.Models;
+using TuneBox.Repositories.Interfaces;
 
 namespace TuneBox.Services
 {
     public class ArtistService
     {
-        private readonly DataService _dataService;
+        private readonly IArtistRepository _artistRepository;
+        private readonly ISongRepository _songRepository;
+        private readonly IMapper _mapper;
 
-        public ArtistService(DataService dataService)
+        public ArtistService(IArtistRepository artistRepository, ISongRepository songRepository, IMapper mapper)
         {
-            _dataService = dataService;
+            _artistRepository = artistRepository;
+            _songRepository = songRepository;
+            _mapper = mapper;
         }
 
-        public IEnumerable<Artist> GetAllArtists()
+        public IEnumerable<ArtistResponseDto> GetAllArtists()
         {
-            var data = _dataService.LoadData();
-            return data.Artists;
+            var artists = _artistRepository.GetAll();
+            return _mapper.Map<IEnumerable<ArtistResponseDto>>(artists);
         }
 
-        public Artist? GetArtistById(int id)
+        public ArtistResponseDto? GetArtistById(int id)
         {
-            var data = _dataService.LoadData();
-            return data.Artists.FirstOrDefault(a => a.Id == id);
+            var artist = _artistRepository.GetById(id);
+            return artist == null ? null : _mapper.Map<ArtistResponseDto>(artist);
         }
 
-        public Artist CreateArtist(Artist newArtist)
+        public ArtistResponseDto CreateArtist(ArtistCreateUpdateDto newArtistDto)
         {
-            var data = _dataService.LoadData();
-            int newId = data.Artists.Any() ? data.Artists.Max(a => a.Id) + 1 : 1;
-            newArtist.Id = newId;
-            data.Artists.Add(newArtist);
-            _dataService.SaveData(data);
-            return newArtist;
+            var artist = _mapper.Map<Artist>(newArtistDto);
+            _artistRepository.Add(artist);
+            return _mapper.Map<ArtistResponseDto>(artist);
         }
 
-        public bool UpdateArtist(int id, Artist updatedArtist)
+        public bool UpdateArtist(int id, ArtistCreateUpdateDto updatedArtistDto)
         {
-            var data = _dataService.LoadData();
-            var existingArtist = data.Artists.FirstOrDefault(a => a.Id == id);
-
+            var existingArtist = _artistRepository.GetById(id);
             if (existingArtist == null) return false;
 
-            existingArtist.Name = updatedArtist.Name;
-            existingArtist.Country = updatedArtist.Country;
-            _dataService.SaveData(data);
+            _mapper.Map(updatedArtistDto, existingArtist);
+            _artistRepository.Update(existingArtist);
             return true;
         }
 
         public bool DeleteArtist(int id)
         {
-            var data = _dataService.LoadData();
-            var artistToRemove = data.Artists.FirstOrDefault(a => a.Id == id);
-
+            var artistToRemove = _artistRepository.GetById(id);
             if (artistToRemove == null) return false;
 
-            data.Artists.Remove(artistToRemove);
-
-            //Cascade delete
-            data.Songs.RemoveAll(s => s.ArtistId == id);
-
-            _dataService.SaveData(data);
+            _artistRepository.Delete(artistToRemove);
             return true;
         }
 
         public void DeleteAllArtists()
         {
-            var data = _dataService.LoadData();
-            data.Artists.Clear();
-            data.Songs.Clear();
-            _dataService.SaveData(data);
+            _artistRepository.DeleteAll();
         }
 
-        public IEnumerable<Song>? GetSongsByArtist(int id)
+        public IEnumerable<SongResponseDto>? GetSongsByArtist(int id)
         {
-            var data = _dataService.LoadData();
-            if (!data.Artists.Any(a => a.Id == id)) return null;
+            if (!_artistRepository.Exists(id)) return null;
 
-            return data.Songs.Where(s => s.ArtistId == id).ToList();
+            var songs = _songRepository.GetByArtistId(id);
+            return _mapper.Map<IEnumerable<SongResponseDto>>(songs);
         }
     }
 }
