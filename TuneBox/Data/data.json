@@ -1,0 +1,44 @@
+{
+  "Artists": [
+    {
+      "Id": 1,
+      "Name": "The Neighbourhood",
+      "Country": "USA"
+    },
+    {
+      "Id": 2,
+      "Name": "Olivia Rodrigo",
+      "Country": "USA"
+    }
+  ],
+  "Songs": [
+    {
+      "Id": 421,
+      "Title": "Good Grief",
+      "Duration": 261,
+      "Genre": "Alternative/Indie Rock",
+      "ArtistId": 1
+    },
+    {
+      "Id": 302,
+      "Title": "OMG",
+      "Duration": 182,
+      "Genre": "Alternative/Indie Rock",
+      "ArtistId": 1
+    },
+    {
+      "Id": 457,
+      "Title": "the cure",
+      "Duration": 297,
+      "Genre": "Indie Pop",
+      "ArtistId": 2
+    },
+    {
+      "Id": 329,
+      "Title": "stupid song",
+      "Duration": 209,
+      "Genre": "Indie Pop",
+      "ArtistId": 2
+    }
+  ]
+}
