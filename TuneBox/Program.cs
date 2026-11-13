@@ -1,9 +1,12 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using TuneBox.Models;
+using TuneBox.Profiles;
 using TuneBox.Repositories;
 using TuneBox.Repositories.Interfaces;
 using TuneBox.Services;
-using TuneBox.Profiles;
+using TuneBox.Validators;
 
 namespace TuneBox
 {
@@ -27,6 +30,10 @@ namespace TuneBox
                 
             builder.Services.AddControllers();
 
+            // FluentValidation
+            builder.Services.AddFluentValidationAutoValidation();
+            builder.Services.AddValidatorsFromAssemblyContaining<ArtistValidator>();
+
             // РЕПОЗИТОРІЇ
             builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
             builder.Services.AddScoped<ISongRepository, SongRepository>();
@@ -39,6 +46,13 @@ namespace TuneBox
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
+
+            // Автоматичне застосування міграцій при запуску
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<TuneBoxDbContext>();
+                db.Database.Migrate();
+            }
 
             if (app.Environment.IsDevelopment())
             {
